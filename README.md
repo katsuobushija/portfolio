@@ -39,7 +39,7 @@ AI 効果音ジェネレーター（https://ohlo.info/ai-sound/ ）では、OWAS
 
 ### XSS（クロスサイトスクリプティング）対策
 
-AI API から返却されるデータ（ユーザー入力由来のテキストを含む）を DOM に表示する際、`innerHTML` を一切使わず `textContent` と `document.createElement` による DOM 構築で出力。API レスポンスに悪意あるスクリプトが混入しても実行されない。
+AI API から返却されるデータ（ユーザー入力由来のテキストを含む）を DOM に表示する際、`innerHTML` を一切使わず `textContent` と `document.createElement` による DOM 構築で出力。API レスポンスに不正なスクリプトが含まれていても実行されない。
 
 ```javascript
 // textContent + DOM構築で安全にレンダリング
@@ -51,7 +51,7 @@ btn.appendChild(span);
 
 ### CSRF（クロスサイトリクエストフォージェリ）対策
 
-全 POST エンドポイントで `X-CSRF-Token` ヘッダーによるトークン検証を実施。トークンはセッション開始時に `random_bytes(32)` で生成し、`hash_equals()` でタイミング攻撃を防止。ログアウトも POST + CSRF 検証を必須にし、外部サイトからの強制ログアウトを防止。
+全 POST エンドポイントで `X-CSRF-Token` ヘッダーによるトークン検証を実施。トークンはセッション開始時に `random_bytes(32)` で生成し、`hash_equals()` でタイミング攻撃に対策。ログアウトも POST + CSRF 検証を必須にし、外部サイトからの意図しないログアウトを防止。
 
 ```php
 function verifyCsrf(): void {
@@ -74,7 +74,7 @@ $stmt->execute([$googleId]);
 
 ### OAuth 認証のセキュリティ
 
-- **state パラメータ:** CSRF トークンを流用せず、認証開始時に一回限りの専用トークンを生成。コールバックで検証後に即破棄しリプレイ攻撃を防止
+- **state パラメータ:** CSRF トークンを流用せず、認証開始時に一回限りの専用トークンを生成。コールバックで検証後に即破棄しリプレイ攻撃に対策
 - **セッション固定攻撃対策:** ログイン成功後に `session_regenerate_id(true)` でセッション ID を再生成
 - **パスワード不保持:** Google OAuth のみ対応し、パスワードを自サーバーに保存しない設計
 
@@ -89,12 +89,12 @@ unset($_SESSION['oauth_state']);
 if (!hash_equals($expectedState, $state)) { /* 拒否 */ }
 ```
 
-### Stripe Webhook のセキュリティ（4 層防御）
+### Stripe Webhook のセキュリティ（4 層検証）
 
-1. **HMAC-SHA256 署名検証** — `Stripe-Signature` ヘッダーを検証し偽造リクエストを排除
+1. **HMAC-SHA256 署名検証** — `Stripe-Signature` ヘッダーを検証し不正リクエストを排除
 2. **タイムスタンプ検証** — 署名の生成時刻が 5 分以内でなければ拒否（リプレイ攻撃対策）
 3. **冪等性チェック** — `stripe_session_id` を DB に記録し同一イベントの二重処理を防止
-4. **クレジット数検証** — metadata の `credits` がサーバー設定値と一致するか検証し改ざんを排除
+4. **クレジット数検証** — metadata の `credits` がサーバー設定値と一致するか検証し不正な変更を排除
 
 ### 決済のレースコンディション対策
 
@@ -110,7 +110,7 @@ if ($stmt->rowCount() === 0) {
 $db->commit();
 ```
 
-### セッション Cookie の堅牢化
+### セッション Cookie の保護設定
 
 ```php
 session_set_cookie_params([
@@ -120,7 +120,7 @@ session_set_cookie_params([
 ]);
 ```
 
-### 情報漏洩の防止
+### 情報の保護
 
 - **エラーメッセージ:** API エラーの詳細はクライアントに返さず `error_log()` でサーバーログに記録。ユーザーには汎用メッセージのみ表示
 - **設定ファイル保護:** `.htaccess` で `.env`・`config.php`・`db.php`・`setup.sql`・`data/` への直接アクセスを遮断
@@ -130,7 +130,7 @@ session_set_cookie_params([
 
 | ユーザー種別 | 制限方式 | 目的 |
 |---|---|---|
-| 未ログイン | IP アドレス + 日別ファイル（5 回/日） | API 乱用防止 |
+| 未ログイン | IP アドレス + 日別ファイル（5 回/日） | API の不正利用防止 |
 | ログイン済み | クレジット残高（DB 管理） | 課金モデルの制御 |
 
 ### 入力バリデーション

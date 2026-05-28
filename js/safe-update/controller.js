@@ -1,6 +1,6 @@
 /**
  * safe-update Controller — イベント接続・フロー制御（MVCのC）
- * 「①SELECT確認 → ②UPDATE実行 → ③SELECT事後確認」の順序を強制し、
+ * 「①SELECT確認 → ②UPDATE実行 → ③SELECT事後確認」の順序を制御し、
  * 本番運用での安全なUPDATE手順を体験させるデモ。
  */
 import { createDatabase } from '../shared/db.js';
