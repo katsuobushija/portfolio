@@ -44,11 +44,11 @@
   </header>
   <main id="main">
 
-  <div class="intro">
-    外部からインポートしたデータと現在のDBを<b>突き合わせて差分を検出</b>し、
-    <b>整合性チェック</b>を経てDBを同期する ─ これはデータ連携業務の基本フローです。
-    このデモでは機器在庫管理を題材に、JOIN / EXCEPT / NOT IN を使った差分抽出を実演します。
-  </div>
+      <div class="intro">
+          外部からインポートしたデータと現在のDBを<b>突き合わせて差分を検出</b>し、
+          <b>整合性チェック</b>を経て差分をDBへ反映する ─ これはデータ連携業務の基本フローです。
+          このデモでは機器在庫管理を題材に、JOIN / EXCEPT / NOT IN を使った差分抽出を実演します。
+      </div>
 
   <div class="status" id="status">&#9203; データベースを初期化しています...</div>
 
@@ -61,7 +61,7 @@
       <div class="table-wrap" id="tblCurrent"></div>
     </div>
     <div class="card imported">
-      <span class="tag tag-imported">&#9679; インポートデータ (inventory_imported)</span>
+        <span class="tag tag-imported">&#9679; インポートデータ (inventory_staging)</span>
       <h3>外部取り込みデータ</h3>
       <div class="table-wrap" id="tblImported"></div>
     </div>
@@ -74,7 +74,7 @@
   </div>
   <pre><span class="cmt">-- インポートにあって現在DBにないもの（新規追加分）</span>
 <span class="kw">SELECT</span> i.*
-<span class="kw">FROM</span> inventory_imported i
+<span class="kw">FROM</span> inventory_staging i
 <span class="kw">LEFT JOIN</span> inventory_current c <span class="kw">ON</span> i.item_code = c.item_code
 <span class="kw">WHERE</span> c.item_code <span class="kw">IS NULL</span>;</pre>
   <div class="step-result" id="addedResult"></div>
@@ -87,7 +87,7 @@
   <pre><span class="cmt">-- 現在DBにあってインポートにないもの（削除された分）</span>
 <span class="kw">SELECT</span> item_code, item_name <span class="kw">FROM</span> inventory_current
 <span class="kw">EXCEPT</span>
-<span class="kw">SELECT</span> item_code, item_name <span class="kw">FROM</span> inventory_imported;</pre>
+<span class="kw">SELECT</span> item_code, item_name <span class="kw">FROM</span> inventory_staging;</pre>
   <div class="step-result" id="deletedResult"></div>
 
   <!-- STEP 3: 変更 -->
@@ -104,9 +104,9 @@
     c.location   <span class="kw">AS</span> current_loc,
     i.location   <span class="kw">AS</span> imported_loc
 <span class="kw">FROM</span> inventory_current c
-<span class="kw">JOIN</span> inventory_imported i <span class="kw">ON</span> c.item_code = i.item_code
+<span class="kw">JOIN</span> inventory_staging i <span class="kw">ON</span> c.item_code = i.item_code
 <span class="kw">WHERE</span> c.quantity != i.quantity
-   <span class="kw">OR</span> c.location != i.location;</pre>
+  <span class="kw">OR</span> c.location != i.location;</pre>
   <div class="step-result" id="changedResult"></div>
 
   <!-- STEP 4: 整合性チェック -->
@@ -116,11 +116,11 @@
   </div>
   <pre><span class="cmt">-- インポートデータの品質チェック（NULL・不正値の検出）</span>
 <span class="kw">SELECT</span> item_code, item_name, category, quantity
-<span class="kw">FROM</span> inventory_imported
+<span class="kw">FROM</span> inventory_staging
 <span class="kw">WHERE</span> item_name <span class="kw">IS NULL</span>
-   <span class="kw">OR</span> category <span class="kw">IS NULL</span>
-   <span class="kw">OR</span> quantity <span class="kw">IS NULL</span>
-   <span class="kw">OR</span> quantity &lt; 0;</pre>
+  <span class="kw">OR</span> category <span class="kw">IS NULL</span>
+  <span class="kw">OR</span> quantity <span class="kw">IS NULL</span>
+  <span class="kw">OR</span> quantity &lt; 0;</pre>
   <div class="step-result" id="checkResult"></div>
 
   <!-- STEP 5: 同期 -->
